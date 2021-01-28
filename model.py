@@ -31,7 +31,10 @@ class NoiseAdaptationLayer(nn.Module):
         global_confuse = self.global_confusion_matrix(f)
         local_confuses = [confusion_matrix(f) for confusion_matrix in self.local_confusion_matrices]
 
-        h = [local_confuse * w[:, i] + global_confuse * (1 - w[:, i]) for i, local_confuse in enumerate(local_confuses)]
+        h = [local_confuse * w[:, i:i + 1] + global_confuse * (1 - w[:, i:i + 1]) for i, local_confuse in enumerate(local_confuses)]
+        h = torch.stack(h)
+        h = torch.transpose(h, 0, 1)
+
         return h
 
 
