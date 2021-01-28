@@ -2,7 +2,7 @@ import torch.nn as nn
 import torchvision.models as models
 
 
-class LabelMe(nn.Module):
+class LabelMeClassifier(nn.Module):
     def __init__(self):
         super().__init__()
 
