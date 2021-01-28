@@ -24,12 +24,12 @@ class NoiseAdaptationLayer(nn.Module):
     def __init__(self, n_class, n_annotator):
         super().__init__()
 
-        self.confusion_global = nn.Linear(n_class, n_class)
-        self.confusion_local = nn.ModuleList([nn.Linear(n_class, n_class) for _ in range(n_annotator)])
+        self.global_confusion_matrix = nn.Linear(n_class, n_class)
+        self.local_confusion_matrices = nn.ModuleList([nn.Linear(n_class, n_class) for _ in range(n_annotator)])
 
     def forward(self, f, w):
-        global_confuse = self.confusion_global(f)
-        local_confuses = [confusion_matrix(f) for confusion_matrix in self.confusion_local]
+        global_confuse = self.global_confusion_matrix(f)
+        local_confuses = [confusion_matrix(f) for confusion_matrix in self.local_confusion_matrices]
 
         h = [local_confuse * w[:, i] + global_confuse * (1 - w[:, i]) for i, local_confuse in enumerate(local_confuses)]
         return h
