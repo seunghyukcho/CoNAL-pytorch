@@ -20,7 +20,7 @@ class AuxiliaryNetwork(nn.Module):
         return w
 
 
-class NoiseAdaptionLayer(nn.Module):
+class NoiseAdaptationLayer(nn.Module):
     def __init__(self, n_class, n_annotator):
         super().__init__()
 
