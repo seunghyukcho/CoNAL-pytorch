@@ -10,11 +10,11 @@ class LabelMeDataset(Dataset):
         self.image_dir = Path(image_dir)
         self.is_train = is_train
 
-        self.labels = np.loadtxt(self.root_dir / 'labels.txt')
+        self.labels = np.loadtxt(self.root_dir / 'labels.txt', dtype=np.float32)
         with open(self.root_dir / 'filenames.txt', 'r') as f:
             self.image_paths = f.read().splitlines()
         if self.is_train:
-            self.annotations = np.loadtxt(self.root_dir / 'annotations.txt')
+            self.annotations = np.loadtxt(self.root_dir / 'annotations.txt', dtype=np.int64)
 
     def __len__(self):
         return len(self.image_paths)
@@ -24,8 +24,9 @@ class LabelMeDataset(Dataset):
         x = np.asarray(img)
         x = x / 255.0
         x = np.transpose(x, (2, 0, 1))
+        x = x.astype(np.float32)
         y = self.labels[idx]
-
+        
         if self.is_train:
             annotation = self.annotations[idx]
             return x, y, annotation
