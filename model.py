@@ -33,3 +33,22 @@ class NoiseAdaptationLayer(nn.Module):
 
         h = [local_confuse * w[:, i] + global_confuse * (1 - w[:, i]) for i, local_confuse in enumerate(local_confuses)]
         return h
+
+
+class CoNAL(nn.Module):
+    def __init__(self, input_dim, n_class, n_annotator, classifier, annotator_dim=77, embedding_dim=20):
+        super().__init__()
+
+        self.auxiliary_network = AuxiliaryNetwork(input_dim, annotator_dim, embedding_dim)
+        self.classifier = classifier
+        self.noise_adaptation_layer = NoiseAdaptationLayer(n_class, n_annotator)
+
+    def forward(self, x, annotator):
+        batch_size = x.size(0)
+        x_flatten = torch.reshape(x, (batch_size, -1))
+
+        f = self.classifier(x)
+        w = self.auxiliary_network(x_flatten, annotator)
+        h = self.noise_adaptation_layer(f, w)
+
+        return h
