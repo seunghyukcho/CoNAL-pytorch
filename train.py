@@ -51,6 +51,7 @@ if __name__ == "__main__":
     task_args(parser)
     args = parser.parse_args()
 
+    print('Loading dataset...')
     train_dataset = task_dataset(args, args.train_data, is_train=True)
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True)
     valid_dataset = task_dataset(args, args.valid_data)
@@ -62,7 +63,7 @@ if __name__ == "__main__":
         args.n_class,
         args.n_annotator,
         classifier,
-        annotator_dim=args.n_class,
+        annotator_dim=args.n_annotator,
         embedding_dim=args.emb_dim
     )
     model = model.to(args.device)
@@ -71,6 +72,7 @@ if __name__ == "__main__":
     classifier_criterion = nn.CrossEntropyLoss(reduction='sum')
     optimizer = Adam(model.parameters(), lr=args.lr)
 
+    print('Start training!')
     for epoch in range(args.epochs):
         total_loss = 0.0
         total_correct = 0
