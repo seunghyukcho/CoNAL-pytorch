@@ -7,13 +7,14 @@ class AuxiliaryNetwork(nn.Module):
     def __init__(self, x_dim, e_dim, w_dim):
         super().__init__()
 
-        self.weight_v_1 = nn.Linear(x_dim, 128)
-        self.weight_v_2 = nn.Linear(128, w_dim)
+        self.weight_v1 = nn.Linear(x_dim, 128)
+        self.weight_v2 = nn.Linear(128, w_dim)
         self.weight_u = nn.Linear(e_dim, w_dim)
         self.activation = nn.Sigmoid()
 
     def forward(self, x, e):
-        v = self.weight_v(x)
+        v = self.weight_v1(x)
+        v = self.weight_v2(v)
         v = f.normalize(v)
         u = self.weight_u(e)
         u = f.normalize(u)
