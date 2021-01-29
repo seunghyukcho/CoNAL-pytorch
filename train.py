@@ -98,7 +98,7 @@ if __name__ == "__main__":
         model.eval()
         for x, y in valid_loader:
             x, y = x.to(args.device), y.to(args.device)
-            pred = model.classifier(x)
+            pred = model(x)
             pred = torch.argmax(pred, dim=1)
             total_correct += torch.sum(torch.eq(pred, y)).item()
         print(
@@ -111,11 +111,13 @@ if __name__ == "__main__":
             best_accuracy = total_correct
             checkpoint_dir = Path(args.save_dir)
             checkpoint_dir.mkdir(parents=True, exist_ok=True)
+            best_model = model if args.device == 'cpu' else model.module
             torch.save({
-                'auxiliary_network': model.auxiliary_network.state_dict(),
-                'noise_adaptation_layer': model.noise_adaptation_layer.state_dict(),
-                'classifier': model.classifier.state_dict()
+                'auxiliary_network': best_model.auxiliary_network.state_dict(),
+                'noise_adaptation_layer': best_model.noise_adaptation_layer.state_dict(),
+                'classifier': best_model.classifier.state_dict()
             }, checkpoint_dir / 'best_model.pth')
 
             with open(checkpoint_dir / 'args.json', 'w') as f:
                 json.dump(args.__dict__, f, indent=2)
+

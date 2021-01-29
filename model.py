@@ -52,10 +52,12 @@ class CoNAL(nn.Module):
         self.classifier = classifier
         self.noise_adaptation_layer = NoiseAdaptationLayer(n_class, n_annotator)
 
-    def forward(self, x, annotator):
-        x_flatten = torch.flatten(x, start_dim=1)
-
+    def forward(self, x, annotator=None):
         f = self.classifier(x)
+        if annotator is None:
+            return f
+
+        x_flatten = torch.flatten(x, start_dim=1)
         w = self.auxiliary_network(x_flatten, annotator)
         h = self.noise_adaptation_layer(f, w)
 
