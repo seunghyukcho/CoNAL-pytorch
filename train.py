@@ -75,7 +75,7 @@ if __name__ == "__main__":
             annotator = torch.eye(args.n_annotator).to(args.device)
             ann_out, cls_out = model(x, annotator)
 
-            ann_out = torch.reshape(ann_out, (-1, 8))
+            ann_out = torch.reshape(ann_out, (-1, args.n_class))
             annotation = annotation.view(-1)
 
             loss = criterion(ann_out, annotation)
@@ -91,8 +91,9 @@ if __name__ == "__main__":
             f'Total Loss: {total_loss / len(train_dataset) } | '
             f'Total Accuracy of Classifier: {total_correct / len(train_dataset)}'
         )
-        writer.add_scalar('train_loss', total_loss / len(train_dataset), epoch)
-        writer.add_scalar('train_accuracy', total_correct / len(train_dataset), epoch)
+        if epoch % args.log_interval == 0:
+            writer.add_scalar('train_loss', total_loss / len(train_dataset), epoch)
+            writer.add_scalar('train_accuracy', total_correct / len(train_dataset), epoch)
 
         total_correct = 0
         model.eval()
@@ -105,7 +106,8 @@ if __name__ == "__main__":
             f'Epoch: {epoch + 1} | Validation | '
             f'Total Accuracy of Classifier: {total_correct / len(valid_dataset)}'
         )
-        writer.add_scalar('valid_accuracy', total_correct / len(valid_dataset), epoch)
+        if epoch % args.log_interval == 0:
+            writer.add_scalar('valid_accuracy', total_correct / len(valid_dataset), epoch)
 
         if best_accuracy < total_correct:
             best_accuracy = total_correct

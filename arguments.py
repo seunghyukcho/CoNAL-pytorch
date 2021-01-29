@@ -6,6 +6,8 @@ def add_train_args(parser):
                        help="Number of instances in a batch.")
     group.add_argument('--lr', type=float, default=1e-5,
                        help="Learning rate.")
+    group.add_argument('--log_interval', type=int, default=10,
+                       help="Log interval.")
     group.add_argument('--task', type=str, choices=['labelme', 'music'],
                        help="Task name for training.")
     group.add_argument('--train_data', type=str,
