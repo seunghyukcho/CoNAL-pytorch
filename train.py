@@ -1,10 +1,14 @@
+import json
+
 import torch
 import argparse
 import importlib
 import torch.nn as nn
+from pathlib import Path
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
+from torch.utils.tensorboard import SummaryWriter
 
 from model import CoNAL
 from arguments import add_train_args, add_model_args
@@ -51,13 +55,16 @@ if __name__ == "__main__":
         annotator_dim=args.n_annotator,
         embedding_dim=args.emb_dim
     )
+    if args.device == 'cuda':
+        model = nn.DataParallel(model)
     model = model.to(args.device)
 
     criterion = nn.CrossEntropyLoss(ignore_index=-1, reduction='sum')
-    classifier_criterion = nn.CrossEntropyLoss(reduction='sum')
     optimizer = Adam(model.parameters(), lr=args.lr)
 
     print('Start training!')
+    best_accuracy = 0
+    writer = SummaryWriter(args.log_dir)
     for epoch in range(args.epochs):
         total_loss = 0.0
         total_correct = 0
@@ -79,12 +86,13 @@ if __name__ == "__main__":
 
             pred = torch.argmax(cls_out, dim=1)
             total_correct += torch.sum(torch.eq(pred, y)).item()
-
         print(
             f'Epoch: {epoch + 1} | Training | '
             f'Total Loss: {total_loss / len(train_dataset) } | '
             f'Total Accuracy of Classifier: {total_correct / len(train_dataset)}'
         )
+        writer.add_scalar('train_loss', total_loss / len(train_dataset), epoch)
+        writer.add_scalar('train_accuracy', total_correct / len(train_dataset), epoch)
 
         total_correct = 0
         model.eval()
@@ -97,3 +105,17 @@ if __name__ == "__main__":
             f'Epoch: {epoch + 1} | Validation | '
             f'Total Accuracy of Classifier: {total_correct / len(valid_dataset)}'
         )
+        writer.add_scalar('valid_accuracy', total_correct / len(valid_dataset), epoch)
+
+        if best_accuracy < total_correct:
+            best_accuracy = total_correct
+            checkpoint_dir = Path(args.save_dir)
+            checkpoint_dir.mkdir(parents=True, exist_ok=True)
+            torch.save({
+                'auxiliary_network': model.auxiliary_network.state_dict(),
+                'noise_adaptation_layer': model.noise_adaptation_layer.state_dict(),
+                'classifier': model.classifier.state_dict()
+            }, checkpoint_dir / 'best_model.pth')
+
+            with open(checkpoint_dir / 'args.json', 'w') as f:
+                json.dump(args.__dict__, f, indent=2)
