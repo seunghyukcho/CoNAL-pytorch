@@ -47,8 +47,7 @@ class CoNAL(nn.Module):
         self.noise_adaptation_layer = NoiseAdaptationLayer(n_class, n_annotator)
 
     def forward(self, x, annotator):
-        batch_size = x.size(0)
-        x_flatten = torch.reshape(x, (batch_size, -1))
+        x_flatten = torch.flatten(x, start_dim=1)
 
         f = self.classifier(x)
         w = self.auxiliary_network(x_flatten, annotator)
