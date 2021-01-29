@@ -34,11 +34,11 @@ if __name__ == "__main__":
         ])
 
     print('Loading train dataset...')
-    train_dataset = task_dataset(args, args.train_data, is_train=True, transform=transform)
+    train_dataset = task_dataset(args, args.train_data, is_train=True, transforms=transform)
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True)
 
     print('Loading validation dataset...')
-    valid_dataset = task_dataset(args, args.valid_data, transform=transform)
+    valid_dataset = task_dataset(args, args.valid_data, transforms=transform)
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=args.batch_size)
 
     print('Building model...')
