@@ -1,14 +1,19 @@
 import numpy as np
-from PIL import Image
 from pathlib import Path
-from torch.utils.data import Dataset
+from PIL import Image
+from torch.utils import data
 
 
-class LabelMeDataset(Dataset):
-    def __init__(self, root_dir, image_dir, is_train=False):
+def add_dataset_args(parser):
+    group = parser.add_argument_group('dataset')
+
+
+class Dataset(data.Dataset):
+    def __init__(self, args, root_dir, is_train=False, transforms=None):
         self.root_dir = Path(root_dir)
-        self.image_dir = Path(image_dir)
+        self.image_dir = self.root_dir / 'images'
         self.is_train = is_train
+        self.transforms = transforms
 
         self.labels = np.loadtxt(self.root_dir / 'labels.txt', dtype=np.float32)
         with open(self.root_dir / 'filenames.txt', 'r') as f:
@@ -26,7 +31,7 @@ class LabelMeDataset(Dataset):
         x = np.transpose(x, (2, 0, 1))
         x = x.astype(np.float32)
         y = self.labels[idx]
-        
+
         if self.is_train:
             annotation = self.annotations[idx]
             return x, y, annotation
