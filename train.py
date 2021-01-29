@@ -4,59 +4,44 @@ import importlib
 import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
+import torchvision.transforms as transforms
 
 from model import CoNAL
-
-
-def add_args(parser):
-    train_args = parser.add_argument_group('train')
-    train_args.add_argument('--epochs', type=int, default=10,
-                            help="Number of epochs for training.")
-    train_args.add_argument('--batch_size', type=int, default=32,
-                            help="Number of instances in a batch.")
-    train_args.add_argument('--lr', type=float, default=1e-5,
-                            help="Learning rate.")
-    train_args.add_argument('--task', type=str, choices=['labelme', 'music'],
-                            help="Task name for training.")
-    train_args.add_argument('--train_data', type=str,
-                            help="Root directory of train data.")
-    train_args.add_argument('--valid_data', type=str,
-                            help="Root directory of validation data.")
-    train_args.add_argument('--device', type=str, choices=['cpu', 'cuda'],
-                            help="Device going to use for training.")
-
-    model_args = parser.add_argument_group('model')
-    model_args.add_argument('--input_dim', type=int,
-                            help="Input dimension of CoNAL.")
-    model_args.add_argument('--n_class', type=int,
-                            help="Number of classes for classification.")
-    model_args.add_argument('--n_annotator', type=int,
-                            help="Number of annotators that labeled the data.")
-    model_args.add_argument('--emb_dim', type=int, default=20,
-                            help="Dimension of embedding in auxiliary network of CoNAL.")
+from arguments import add_train_args, add_model_args
 
 
 if __name__ == "__main__":
     task_parser = argparse.ArgumentParser(add_help=False)
-    parser = argparse.ArgumentParser()
     task_parser.add_argument('--task', type=str, choices=['labelme', 'music'],
                              help="Task name for training.")
 
     task_name = task_parser.parse_known_args()[0].task
     task_module = importlib.import_module(f'tasks.{task_name}')
-    task_args = getattr(task_module, 'add_task_args')
     task_dataset = getattr(task_module, 'Dataset')
 
-    add_args(parser)
-    task_args(parser)
+    parser = argparse.ArgumentParser()
+    add_train_args(parser)
+    add_model_args(parser)
+    getattr(task_module, 'add_task_args')(parser)
     args = parser.parse_args()
 
-    print('Loading dataset...')
-    train_dataset = task_dataset(args, args.train_data, is_train=True)
+    transform = None
+    if task_name == 'labelme':
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        ])
+
+    print('Loading train dataset...')
+    train_dataset = task_dataset(args, args.train_data, is_train=True, transform=transform)
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True)
-    valid_dataset = task_dataset(args, args.valid_data)
+
+    print('Loading validation dataset...')
+    valid_dataset = task_dataset(args, args.valid_data, transform=transform)
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=args.batch_size)
 
+    print('Building model...')
     classifier = getattr(task_module, 'Classifier')(args)
     model = CoNAL(
         args.input_dim,
@@ -76,6 +61,7 @@ if __name__ == "__main__":
     for epoch in range(args.epochs):
         total_loss = 0.0
         total_correct = 0
+        model.train()
         for x, y, annotation in train_loader:
             model.zero_grad()
             x, y, annotation = x.to(args.device), y.to(args.device), annotation.to(args.device)
@@ -95,7 +81,19 @@ if __name__ == "__main__":
             total_correct += torch.sum(torch.eq(pred, y)).item()
 
         print(
-            f'Epoch: {epoch} | '
+            f'Epoch: {epoch + 1} | Training | '
             f'Total Loss: {total_loss / len(train_dataset) } | '
             f'Total Accuracy of Classifier: {total_correct / len(train_dataset)}'
+        )
+
+        total_correct = 0
+        model.eval()
+        for x, y in valid_loader:
+            x, y = x.to(args.device), y.to(args.device)
+            pred = model.classifier(x)
+            pred = torch.argmax(pred, dim=1)
+            total_correct += torch.sum(torch.eq(pred, y)).item()
+        print(
+            f'Epoch: {epoch + 1} | Validation | '
+            f'Total Accuracy of Classifier: {total_correct / len(valid_dataset)}'
         )
