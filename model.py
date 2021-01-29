@@ -1,18 +1,22 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as f
 
 
 class AuxiliaryNetwork(nn.Module):
     def __init__(self, x_dim, e_dim, w_dim):
         super().__init__()
 
-        self.weight_v = nn.Linear(x_dim, w_dim)
+        self.weight_v_1 = nn.Linear(x_dim, 128)
+        self.weight_v_2 = nn.Linear(128, w_dim)
         self.weight_u = nn.Linear(e_dim, w_dim)
         self.activation = nn.Sigmoid()
 
     def forward(self, x, e):
         v = self.weight_v(x)
+        v = f.normalize(v)
         u = self.weight_u(e)
+        u = f.normalize(u)
         u = torch.transpose(u, 0, 1)
         w = torch.matmul(v, u)
         w = self.activation(w)
@@ -24,16 +28,17 @@ class NoiseAdaptationLayer(nn.Module):
     def __init__(self, n_class, n_annotator):
         super().__init__()
 
-        self.global_confusion_matrix = nn.Linear(n_class, n_class)
-        self.local_confusion_matrices = nn.ModuleList([nn.Linear(n_class, n_class) for _ in range(n_annotator)])
+        self.global_confusion_matrix = nn.Parameter(torch.eye(n_class, n_class), requires_grad=True)
+        self.local_confusion_matrices = nn.Parameter(
+            torch.stack([torch.eye(n_class, n_class) for _ in range(n_annotator)]),
+            requires_grad=True
+        )
 
     def forward(self, f, w):
-        global_confuse = self.global_confusion_matrix(f)
-        local_confuses = [confusion_matrix(f) for confusion_matrix in self.local_confusion_matrices]
+        global_prob = torch.einsum('ij,jk->ik', f, self.global_confusion_matrix)
+        local_probs = torch.einsum('ik,jkl->ijl', f, self.local_confusion_matrices)
 
-        h = [local_confuse * w[:, i:i + 1] + global_confuse * (1 - w[:, i:i + 1]) for i, local_confuse in enumerate(local_confuses)]
-        h = torch.stack(h)
-        h = torch.transpose(h, 0, 1)
+        h = w[:, :, None] * global_prob[:, None, :] + (1 - w[:, :, None]) * local_probs
 
         return h
 
