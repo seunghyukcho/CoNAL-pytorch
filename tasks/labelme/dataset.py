@@ -25,11 +25,13 @@ class Dataset(data.Dataset):
         return len(self.image_paths)
 
     def __getitem__(self, idx):
-        img = Image.open(self.image_dir / self.image_paths[idx])
-        x = np.asarray(img)
-        x = x / 255.0
-        x = np.transpose(x, (2, 0, 1))
-        x = x.astype(np.float32)
+        x = Image.open(self.image_dir / self.image_paths[idx])
+        if self.transforms:
+            x = self.transforms(x)
+        else:
+            x = np.asarray(x)
+            x = np.transpose(x, (2, 0, 1))
+            x = x.astype(np.float32)
         y = self.labels[idx]
 
         if self.is_train:
