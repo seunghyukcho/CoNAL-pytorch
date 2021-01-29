@@ -54,4 +54,4 @@ class CoNAL(nn.Module):
         w = self.auxiliary_network(x_flatten, annotator)
         h = self.noise_adaptation_layer(f, w)
 
-        return h
+        return h, f
