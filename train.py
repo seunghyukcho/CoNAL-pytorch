@@ -3,6 +3,7 @@ import json
 import torch
 import argparse
 import importlib
+import numpy as np
 import torch.nn as nn
 from pathlib import Path
 from torch.optim import Adam
@@ -11,13 +12,12 @@ import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
 
 from model import CoNAL
-from arguments import add_train_args, add_model_args
+from arguments import get_task_parser, add_train_args, add_model_args
 
 
 if __name__ == "__main__":
     # Read task argument first, and determine the other arguments
-    task_parser = argparse.ArgumentParser(add_help=False)
-    task_parser.add_argument('--task', type=str, choices=['labelme', 'music'])
+    task_parser = get_task_parser()
 
     task_name = task_parser.parse_known_args()[0].task
     task_module = importlib.import_module(f'tasks.{task_name}')
@@ -39,7 +39,12 @@ if __name__ == "__main__":
     transform = None
     if task_name == 'labelme':
         transform = transforms.Compose([
-            transforms.Resize((224, 224)),
+            transforms.RandomChoice([
+                transforms.RandomAffine(degrees=None, shear=15),
+                transforms.RandomHorizontalFlip(0.5),
+                transforms.RandomResizedCrop(224)
+            ]),
+            transforms.Resize((224, 224)),  # Not essential, just because original vgg did
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ])
