@@ -4,3 +4,4 @@ numpy
 Pillow
 tensorboard
 munch
+tqdm
