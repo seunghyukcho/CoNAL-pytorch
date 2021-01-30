@@ -12,6 +12,8 @@ def add_model_args(parser):
 
 def add_train_args(parser):
     group = parser.add_argument_group('train')
+    group.add_argument('--seed', type=int, default=7777,
+                       help="Random seed.")
     group.add_argument('--epochs', type=int, default=10,
                        help="Number of epochs for training.")
     group.add_argument('--batch_size', type=int, default=32,
