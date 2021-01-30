@@ -40,7 +40,7 @@ if __name__ == "__main__":
     if task_name == 'labelme':
         transform = transforms.Compose([
             transforms.RandomChoice([
-                transforms.RandomAffine(degrees=None, shear=15),
+                transforms.RandomAffine(degrees=0, shear=15),
                 transforms.RandomHorizontalFlip(0.5),
                 transforms.RandomResizedCrop(224)
             ]),
@@ -110,8 +110,8 @@ if __name__ == "__main__":
             pred = torch.argmax(cls_out, dim=1)
             train_correct += torch.sum(torch.eq(pred, y)).item()
         print(
-            f'Epoch: {epoch + 1} |  Training  | '
-            f'Total Accuracy of Classifier: {train_correct / len(train_dataset)} |'
+            f'Epoch: {epoch + 1} | Training   | '
+            f'Total Accuracy of Classifier: {train_correct / len(train_dataset)} | '
             f'Total Loss: {train_loss}'
         )
 
