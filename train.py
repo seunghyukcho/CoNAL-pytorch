@@ -54,8 +54,6 @@ if __name__ == "__main__":
         annotator_dim=args.n_annotator,
         embedding_dim=args.emb_dim
     )
-    if args.device == 'cuda':
-        model = nn.DataParallel(model)
     model = model.to(args.device)
 
     # Ignore annotators labeling which is -1
@@ -88,7 +86,7 @@ if __name__ == "__main__":
             confusion_matrices = model.noise_adaptation_layer
             matrices = confusion_matrices.local_confusion_matrices - confusion_matrices.global_confusion_matrix
             for matrix in matrices:
-                loss += args.scale * torch.linalg.norm(matrix)
+                loss -= args.scale * torch.linalg.norm(matrix)
 
             # Update model weight using gradient descent
             loss.backward()
@@ -128,11 +126,10 @@ if __name__ == "__main__":
             best_accuracy = valid_correct
             checkpoint_dir = Path(args.save_dir)
             checkpoint_dir.mkdir(parents=True, exist_ok=True)
-            best_model = model if args.device == 'cpu' else model.module
             torch.save({
-                'auxiliary_network': best_model.auxiliary_network.state_dict(),
-                'noise_adaptation_layer': best_model.noise_adaptation_layer.state_dict(),
-                'classifier': best_model.classifier.state_dict()
+                'auxiliary_network': model.auxiliary_network.state_dict(),
+                'noise_adaptation_layer': model.noise_adaptation_layer.state_dict(),
+                'classifier': model.classifier.state_dict()
             }, checkpoint_dir / 'best_model.pth')
 
             with open(checkpoint_dir / 'args.json', 'w') as f:
