@@ -15,6 +15,7 @@ from arguments import add_train_args, add_model_args
 
 
 if __name__ == "__main__":
+    # Read task argument first, and determine the other arguments
     task_parser = argparse.ArgumentParser(add_help=False)
     task_parser.add_argument('--task', type=str, choices=['labelme', 'music'])
 
@@ -28,6 +29,13 @@ if __name__ == "__main__":
     getattr(task_module, 'add_task_args')(parser)
     args = parser.parse_args()
 
+    # Seed settings
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+    # Transform settings based on task
     transform = None
     if task_name == 'labelme':
         transform = transforms.Compose([
@@ -97,11 +105,12 @@ if __name__ == "__main__":
             pred = torch.argmax(cls_out, dim=1)
             train_correct += torch.sum(torch.eq(pred, y)).item()
         print(
-            f'Epoch: {epoch + 1} | Training | '
-            f'Total Loss: {train_loss / len(train_dataset) } | '
-            f'Total Accuracy of Classifier: {train_correct / len(train_dataset)}'
+            f'Epoch: {epoch + 1} |  Training  | '
+            f'Total Accuracy of Classifier: {train_correct / len(train_dataset)} |'
+            f'Total Loss: {train_loss}'
         )
 
+        # Validation
         with torch.no_grad():
             valid_correct = 0
             model.eval()
@@ -117,7 +126,7 @@ if __name__ == "__main__":
 
         # Save tensorboard log
         if epoch % args.log_interval == 0:
-            writer.add_scalar('train_loss', train_loss / len(train_dataset), epoch)
+            writer.add_scalar('train_loss', train_loss, epoch)
             writer.add_scalar('train_accuracy', train_correct / len(train_dataset), epoch)
             writer.add_scalar('valid_accuracy', valid_correct / len(valid_dataset), epoch)
 
