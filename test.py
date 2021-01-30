@@ -2,6 +2,7 @@ import json
 import torch
 import argparse
 import importlib
+from tqdm import tqdm
 from pathlib import Path
 from munch import munchify
 from torch.utils.data import DataLoader
@@ -15,6 +16,7 @@ if __name__ == "__main__":
     add_test_args(parser)
     args = parser.parse_args()
 
+    print('Loading configurations...')
     ckpt_dir = Path(args.ckpt_dir)
     ckpt_file = ckpt_dir / 'best_model.pth'
     ckpt = torch.load(ckpt_file)
@@ -45,10 +47,10 @@ if __name__ == "__main__":
     with torch.no_grad():
         classifier.eval()
         correct = 0
-        for x, y in test_loader:
+        for x, y in tqdm(test_loader):
             x, y = x.to(args.device), y.to(args.device)
             pred = classifier(x)
             pred = torch.argmax(pred, dim=1)
             correct += torch.sum(torch.eq(pred, y)).item()
 
-        print(f'Test Accuracy: {correct / len(test_loader)}')
+        print(f'Test Accuracy: {correct / len(test_dataset)}')
