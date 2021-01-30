@@ -17,14 +17,18 @@ class Classifier(nn.Module):
         self.n_units = args.n_units
         self.n_class = args.n_class
 
-        self.backbone = models.vgg16(pretrained=True)
+        self.backbone = models.vgg16_bn(pretrained=True)
+        self.backbone.avgpool = nn.AvgPool2d(kernel_size=1, stride=1)
         self.backbone.classifier = nn.Sequential(
-            nn.Linear(512 * 7 * 7, self.n_units),
+            nn.Linear(512, self.n_units),
             nn.ReLU(),
             nn.Dropout(self.dropout),
             nn.Linear(self.n_units, self.n_class),
             nn.Softmax(dim=-1)
         )
+
+        for param in self.backbone.features.parameters():
+            param.requires_grad = False
 
     def forward(self, x):
         x = self.backbone(x)
