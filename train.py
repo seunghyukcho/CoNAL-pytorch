@@ -16,8 +16,7 @@ from arguments import add_train_args, add_model_args
 
 if __name__ == "__main__":
     task_parser = argparse.ArgumentParser(add_help=False)
-    task_parser.add_argument('--task', type=str, choices=['labelme', 'music'],
-                             help="Task name for training.")
+    task_parser.add_argument('--task', type=str, choices=['labelme', 'music'])
 
     task_name = task_parser.parse_known_args()[0].task
     task_module = importlib.import_module(f'tasks.{task_name}')
@@ -59,58 +58,74 @@ if __name__ == "__main__":
         model = nn.DataParallel(model)
     model = model.to(args.device)
 
-    criterion = nn.CrossEntropyLoss(ignore_index=-1, reduction='sum')
+    # Ignore annotators labeling which is -1
+    criterion = nn.CrossEntropyLoss(ignore_index=-1, reduction='mean')
     optimizer = Adam(model.parameters(), lr=args.lr)
 
     print('Start training!')
     best_accuracy = 0
     writer = SummaryWriter(args.log_dir)
     for epoch in range(args.epochs):
-        total_loss = 0.0
-        total_correct = 0
+        train_loss = 0.0
+        train_correct = 0
         model.train()
         for x, y, annotation in train_loader:
             model.zero_grad()
-            x, y, annotation = x.to(args.device), y.to(args.device), annotation.to(args.device)
-            annotator = torch.eye(args.n_annotator).to(args.device)
+
+            # Annotator embedding matrix (in this case, just a identity matrix)
+            annotator = torch.eye(args.n_annotator)
+
+            # Move the parameters to device given by argument
+            x, y, annotation, annotator = x.to(args.device), y.to(args.device), annotation.to(args.device), annotator.to(args.device)
             ann_out, cls_out = model(x, annotator)
 
+            # Calculate loss of annotators' labeling
             ann_out = torch.reshape(ann_out, (-1, args.n_class))
             annotation = annotation.view(-1)
-
             loss = criterion(ann_out, annotation)
-            total_loss += loss.item()
 
+            # Regularization term
+            confusion_matrices = model.noise_adaptation_layer
+            matrices = confusion_matrices.local_confusion_matrices - confusion_matrices.global_confusion_matrix
+            for matrix in matrices:
+                loss += args.scale * torch.linalg.norm(matrix)
+
+            # Update model weight using gradient descent
             loss.backward()
             optimizer.step()
+            train_loss += loss.item()
 
+            # Calculate classifier accuracy
             pred = torch.argmax(cls_out, dim=1)
-            total_correct += torch.sum(torch.eq(pred, y)).item()
+            train_correct += torch.sum(torch.eq(pred, y)).item()
         print(
             f'Epoch: {epoch + 1} | Training | '
-            f'Total Loss: {total_loss / len(train_dataset) } | '
-            f'Total Accuracy of Classifier: {total_correct / len(train_dataset)}'
+            f'Total Loss: {train_loss / len(train_dataset) } | '
+            f'Total Accuracy of Classifier: {train_correct / len(train_dataset)}'
         )
-        if epoch % args.log_interval == 0:
-            writer.add_scalar('train_loss', total_loss / len(train_dataset), epoch)
-            writer.add_scalar('train_accuracy', total_correct / len(train_dataset), epoch)
 
-        total_correct = 0
-        model.eval()
-        for x, y in valid_loader:
-            x, y = x.to(args.device), y.to(args.device)
-            pred = model(x)
-            pred = torch.argmax(pred, dim=1)
-            total_correct += torch.sum(torch.eq(pred, y)).item()
+        with torch.no_grad():
+            valid_correct = 0
+            model.eval()
+            for x, y in valid_loader:
+                x, y = x.to(args.device), y.to(args.device)
+                pred = model(x)
+                pred = torch.argmax(pred, dim=1)
+                valid_correct += torch.sum(torch.eq(pred, y)).item()
         print(
             f'Epoch: {epoch + 1} | Validation | '
-            f'Total Accuracy of Classifier: {total_correct / len(valid_dataset)}'
+            f'Total Accuracy of Classifier: {valid_correct / len(valid_dataset)}'
         )
-        if epoch % args.log_interval == 0:
-            writer.add_scalar('valid_accuracy', total_correct / len(valid_dataset), epoch)
 
-        if best_accuracy < total_correct:
-            best_accuracy = total_correct
+        # Save tensorboard log
+        if epoch % args.log_interval == 0:
+            writer.add_scalar('train_loss', train_loss / len(train_dataset), epoch)
+            writer.add_scalar('train_accuracy', train_correct / len(train_dataset), epoch)
+            writer.add_scalar('valid_accuracy', valid_correct / len(valid_dataset), epoch)
+
+        # Save the model with highest accuracy on validation set
+        if best_accuracy < valid_correct:
+            best_accuracy = valid_correct
             checkpoint_dir = Path(args.save_dir)
             checkpoint_dir.mkdir(parents=True, exist_ok=True)
             best_model = model if args.device == 'cpu' else model.module

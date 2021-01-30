@@ -1,3 +1,15 @@
+def add_model_args(parser):
+    group = parser.add_argument_group('model')
+    group.add_argument('--input_dim', type=int,
+                       help="Input dimension of CoNAL.")
+    group.add_argument('--n_class', type=int,
+                       help="Number of classes for classification.")
+    group.add_argument('--n_annotator', type=int,
+                       help="Number of annotators that labeled the data.")
+    group.add_argument('--emb_dim', type=int, default=20,
+                       help="Dimension of embedding in auxiliary network of CoNAL.")
+
+
 def add_train_args(parser):
     group = parser.add_argument_group('train')
     group.add_argument('--epochs', type=int, default=10,
@@ -20,15 +32,17 @@ def add_train_args(parser):
                        help="Folder going to save model checkpoints.")
     group.add_argument('--log_dir', type=str, default='logs/',
                        help="Folder going to save logs.")
+    group.add_argument('--scale', type=float, default=0,
+                       help="Scale of regularization term.")
 
 
-def add_model_args(parser):
-    group = parser.add_argument_group('model')
-    group.add_argument('--input_dim', type=int,
-                       help="Input dimension of CoNAL.")
-    group.add_argument('--n_class', type=int,
-                       help="Number of classes for classification.")
-    group.add_argument('--n_annotator', type=int,
-                       help="Number of annotators that labeled the data.")
-    group.add_argument('--emb_dim', type=int, default=20,
-                       help="Dimension of embedding in auxiliary network of CoNAL.")
+def add_test_args(parser):
+    group = parser.add_argument_group('test')
+    group.add_argument('--batch_size', type=int, default=32,
+                       help="Number of instances in a batch.")
+    group.add_argument('--test_data', type=str,
+                       help="Root directory of test data.")
+    group.add_argument('--device', type=str, choices=['cpu', 'cuda'],
+                       help="Device going to use for training.")
+    group.add_argument('--ckpt_dir', type=str,
+                       help="Directory which contains the checkpoint and args.json.")
