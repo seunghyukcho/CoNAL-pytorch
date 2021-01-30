@@ -1,3 +1,14 @@
+import argparse
+
+tasks = ['labelme', 'music']
+
+
+def get_task_parser():
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--task', type=str, choices=tasks)
+    return parser
+
+
 def add_model_args(parser):
     group = parser.add_argument_group('model')
     group.add_argument('--input_dim', type=int,
@@ -22,7 +33,7 @@ def add_train_args(parser):
                        help="Learning rate.")
     group.add_argument('--log_interval', type=int, default=10,
                        help="Log interval.")
-    group.add_argument('--task', type=str, choices=['labelme', 'music'],
+    group.add_argument('--task', type=str, choices=tasks,
                        help="Task name for training.")
     group.add_argument('--train_data', type=str,
                        help="Root directory of train data.")
