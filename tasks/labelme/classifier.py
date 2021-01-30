@@ -20,7 +20,7 @@ class Classifier(nn.Module):
         self.backbone = models.vgg16_bn(pretrained=True)
         self.backbone.avgpool = nn.AvgPool2d(kernel_size=1, stride=1)
         self.backbone.classifier = nn.Sequential(
-            nn.Linear(512, self.n_units),
+            nn.Linear(512 * 7 * 7, self.n_units),
             nn.ReLU(),
             nn.Dropout(self.dropout),
             nn.Linear(self.n_units, self.n_class),
