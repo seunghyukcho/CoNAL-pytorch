@@ -3,3 +3,4 @@ torchvision
 numpy
 Pillow
 tensorboard
+munch
