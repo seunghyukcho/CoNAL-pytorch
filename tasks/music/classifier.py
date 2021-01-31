@@ -18,7 +18,7 @@ class Classifier(nn.Module):
 
         self.layers = nn.Sequential(
             nn.Linear(124, self.n_units),
-            nn.BatchNorm1d(self.n_units),
+            nn.BatchNorm1d(self.n_units, affine=False),
             nn.ReLU(),
             nn.Dropout(self.dropout),
             nn.Linear(self.n_units, self.n_class),
