@@ -8,9 +8,9 @@ from torchvision import transforms
 def add_dataset_args(parser):
     group = parser.add_argument_group('dataset')
     group.add_argument('--degree', type=int, default=0,
-                       help='Degrees of random affine augmentation.')
+                       help='Degrees of random affine augmentation (Default: 0).')
     group.add_argument('--shear', type=int, default=15,
-                       help='Shearing of random affine augmentation.')
+                       help='Shearing of random affine augmentation (Default: 15).')
 
 
 class Dataset(data.Dataset):

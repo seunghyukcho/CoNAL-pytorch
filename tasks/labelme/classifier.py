@@ -5,9 +5,9 @@ import torchvision.models as models
 def add_classifier_args(parser):
     group = parser.add_argument_group('classifier')
     group.add_argument('--dropout', type=float, default=0.5,
-                       help="Dropout rate")
+                       help="Dropout rate (Default: 0.5).")
     group.add_argument('--n_units', type=int, default=128,
-                       help="Number of units in FC layer")
+                       help="Number of units in FC layer (Default: 128).")
 
 
 class Classifier(nn.Module):
