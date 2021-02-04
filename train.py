@@ -95,11 +95,6 @@ if __name__ == "__main__":
             # Calculate classifier accuracy
             pred = torch.argmax(cls_out, dim=1)
             train_correct += torch.sum(torch.eq(pred, y)).item()
-        print(
-            f'Epoch: {epoch + 1} | Training   | '
-            f'Total Accuracy of Classifier: {train_correct / len(train_dataset)} | '
-            f'Total Loss: {train_loss}'
-        )
 
         # Validation
         with torch.no_grad():
@@ -110,9 +105,12 @@ if __name__ == "__main__":
                 pred = model(x)
                 pred = torch.argmax(pred, dim=1)
                 valid_correct += torch.sum(torch.eq(pred, y)).item()
+
         print(
-            f'Epoch: {epoch + 1} | Validation | '
-            f'Total Accuracy of Classifier: {valid_correct / len(valid_dataset)}'
+            f'Epoch: {(epoch + 1):4d} | '
+            f'Train Loss: {train_loss:.3f} | '
+            f'Train Accuracy: {(train_correct / len(train_dataset)):.2f} | '
+            f'Valid Accuracy: {(valid_correct / len(valid_dataset)):.2f}'
         )
 
         # Save tensorboard log
