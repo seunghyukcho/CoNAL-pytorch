@@ -12,15 +12,17 @@ def add_classifier_args(parser):
 class Classifier(nn.Module):
     def __init__(self, args):
         super().__init__()
+        self.input_dim = args.input_dim
         self.dropout = args.dropout
         self.n_units = args.n_units
         self.n_class = args.n_class
 
         self.layers = nn.Sequential(
-            nn.Linear(124, self.n_units),
-            nn.BatchNorm1d(self.n_units, affine=False),
+            nn.BatchNorm1d(self.input_dim, affine=False),
+            nn.Linear(self.input_dim, self.n_units),
             nn.ReLU(),
             nn.Dropout(self.dropout),
+            nn.BatchNorm1d(self.n_units, affine=False),
             nn.Linear(self.n_units, self.n_class),
             nn.Softmax(dim=-1)
         )
