@@ -30,15 +30,7 @@ if __name__ == "__main__":
     task_module = importlib.import_module(f'tasks.{task_name}')
     task_dataset = getattr(task_module, 'Dataset')
 
-    transform = None
-    if task_name == 'labelme':
-        transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        ])
-
-    test_dataset = task_dataset(config, args.test_data, transforms=transform)
+    test_dataset = task_dataset(config, args.test_data)
     test_loader = DataLoader(dataset=test_dataset, batch_size=args.batch_size)
     classifier = getattr(task_module, 'Classifier')(config)
     classifier.load_state_dict(ckpt['classifier'])

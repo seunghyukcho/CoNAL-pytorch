@@ -35,26 +35,12 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-    # Transform settings based on task
-    transform = None
-    if task_name == 'labelme':
-        transform = transforms.Compose([
-            transforms.RandomChoice([
-                transforms.RandomAffine(degrees=0, shear=15),
-                transforms.RandomHorizontalFlip(0.5),
-                transforms.RandomResizedCrop(224)
-            ]),
-            transforms.Resize((224, 224)),  # Not essential, just because original vgg did
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        ])
-
     print('Loading train dataset...')
-    train_dataset = task_dataset(args, args.train_data, is_train=True, transforms=transform)
+    train_dataset = task_dataset(args, args.train_data, is_train=True)
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True)
 
     print('Loading validation dataset...')
-    valid_dataset = task_dataset(args, args.valid_data, transforms=transform)
+    valid_dataset = task_dataset(args, args.valid_data)
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=args.batch_size)
 
     print('Building model...')
