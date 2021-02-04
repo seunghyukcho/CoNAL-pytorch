@@ -8,10 +8,9 @@ def add_dataset_args(parser):
 
 
 class Dataset(data.Dataset):
-    def __init__(self, args, root_dir, is_train=False, transforms=None):
+    def __init__(self, args, root_dir, is_train=False):
         self.root_dir = Path(root_dir)
         self.is_train = is_train
-        self.transforms = transforms
 
         self.music = np.loadtxt(self.root_dir / 'data.csv', delimiter=',', dtype=np.float32)
         self.labels = np.loadtxt(self.root_dir / 'labels.csv', delimiter=',', dtype=np.int64)
