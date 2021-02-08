@@ -29,9 +29,9 @@ class NoiseAdaptationLayer(nn.Module):
     def __init__(self, n_class, n_annotator):
         super().__init__()
 
-        self.global_confusion_matrix = nn.Parameter(torch.eye(n_class, n_class), requires_grad=True)
+        self.global_confusion_matrix = nn.Parameter(torch.eye(n_class, n_class) * 2, requires_grad=True)
         self.local_confusion_matrices = nn.Parameter(
-            torch.stack([torch.eye(n_class, n_class) for _ in range(n_annotator)]),
+            torch.stack([torch.eye(n_class, n_class) * 2 for _ in range(n_annotator)]),
             requires_grad=True
         )
 
