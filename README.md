@@ -1,5 +1,5 @@
-# CoNAL - UnOfficial Pytorch Implementation
-Pytorch implementation of CoNAL(Common Noise Adaptation Layers) from "Learning from Crowds by Modeling Common Confusions"
+# CoNAL Pytorch Implementation
+Unofficial pytorch implementation of CoNAL(Common Noise Adaptation Layers) from "Learning from Crowds by Modeling Common Confusions"
 - Paper: https://arxiv.org/pdf/2012.13052.pdf
 - Index
   - [Preparing Task](#Preparing-Task)
