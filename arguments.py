@@ -1,6 +1,6 @@
 import argparse
 
-tasks = ['labelme', 'music']
+tasks = ['labelme', 'music', 'dogs_cats']
 
 
 def get_task_parser():
